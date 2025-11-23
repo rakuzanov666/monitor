@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mirage</title>
+  <title>Мониторинг сервера</title>
   <!-- Подключаем Montserrat -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -28,6 +28,15 @@
       font-size: 1.8rem;
       margin-bottom: 2rem;
       color: #ffcc00;
+      cursor: pointer;
+      padding: 1rem 2rem;
+      border: 2px solid #ffcc00;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+    .intro-text:hover {
+      background: #ffcc00;
+      color: #000;
     }
 
     .status-image { width: 300px; height: 300px; margin-bottom: 2rem; border-radius: 10px; overflow: hidden; }
@@ -52,9 +61,12 @@
 </head>
 <body>
 
-  <!-- Экран загрузки с дополнительным текстом -->
-  <div class="screen active" id="loadingScreen">
-    <div class="intro-text">Нажмите для проверки состояния сервера</div>
+  <!-- Экран с интерактивной надписью -->
+  <div class="screen active" id="introScreen">
+    <div class="intro-text" id="startCheck">Нажмите для проверки состояния сервера</div>
+  </div>
+
+  <div class="screen" id="loadingScreen">
     <div class="loading active">Проверка состояния сервера...</div>
   </div>
 
@@ -87,6 +99,8 @@
       const SERVER_URL = 'https://miragemonitoring.duckdns.org/';
       const SERVER_IP = '51.250.72.223';
 
+      const introScreen    = document.getElementById('introScreen');
+      const startCheckBtn  = document.getElementById('startCheck');
       const loadingScreen  = document.getElementById('loadingScreen');
       const onlineScreen   = document.getElementById('onlineScreen');
       const offlineScreen  = document.getElementById('offlineScreen');
@@ -104,7 +118,7 @@
       let isMusicPlaying = false;
 
       function showScreen(screen) {
-        [loadingScreen, onlineScreen, offlineScreen].forEach(s => {
+        [introScreen, loadingScreen, onlineScreen, offlineScreen].forEach(s => {
           s.classList.remove('active');
           s.classList.remove('fade');
         });
@@ -166,40 +180,26 @@
         }).catch((e) => console.warn('Не удалось автоматически воспроизвести музыку:', e));
       }
 
-      showScreen(loadingScreen);
-      checkServer().then(res => {
+      async function startCheck() {
+        showScreen(loadingScreen);
+        const res = await checkServer();
         if (res.success) {
-          getGeo(SERVER_IP).then(geo => {
+          try {
+            const geo = await getGeo(SERVER_IP);
             showOnline(res.ping, geo);
-          }).catch(e => {
+          } catch(e) {
             console.warn('Гео ошибка:', e);
             showOnline(res.ping, null);
-          });
+          }
         } else {
           showOffline();
         }
-      });
+      }
 
-      onlineRefreshBtn.addEventListener('click', () => {
-        showScreen(loadingScreen);
-        checkServer().then(res => {
-          if (res.success) {
-            getGeo(SERVER_IP).then(geo => showOnline(res.ping, geo)).catch(e => showOnline(res.ping, null));
-          } else {
-            showOffline();
-          }
-        });
-      });
-      offlineRefreshBtn.addEventListener('click', () => {
-        showScreen(loadingScreen);
-        checkServer().then(res => {
-          if (res.success) {
-            getGeo(SERVER_IP).then(geo => showOnline(res.ping, geo)).catch(e => showOnline(res.ping, null));
-          } else {
-            showOffline();
-          }
-        });
-      });
+      startCheckBtn.addEventListener('click', startCheck);
+
+      onlineRefreshBtn.addEventListener('click', startCheck);
+      offlineRefreshBtn.addEventListener('click', startCheck);
 
       toggleMusicBtn.addEventListener('click', () => {
         if (isMusicPlaying) {
