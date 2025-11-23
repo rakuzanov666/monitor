@@ -144,26 +144,26 @@
       }
 
       async function getGeo(ip) {
-        const url = `http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city&lang=ru`;
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('Geo API error');
-        const data = await resp.json();
-        if (data.status !== 'success') throw new Error(data.message);
-        return data;
-      }
+  const url = `https://ipwho.is/${ip}?lang=ru`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Geo API error');
+  const data = await resp.json();
+  if (!data.success) throw new Error(data.message || 'Geo error');
+  return data; // data.city, data.region, data.country
+}
 
       function showOnline(ping, geo) {
         onlinePing.textContent = `Пинг: ${ping} мс`;
         onlineIP.textContent = `IP: ${SERVER_IP}`;
         let loc = 'неизвестно';
-        if (geo) {
-          const parts = [];
-          if (geo.city) parts.push(geo.city);
-          if (geo.regionName) parts.push(geo.regionName);
-          if (geo.country) parts.push(geo.country);
-          loc = parts.join(', ');
-        }
-        onlineLocation.textContent = `Местоположение: ${loc}`;
+  if (geo) {
+  const parts = [];
+  if (geo.city) parts.push(geo.city);
+  if (geo.region) parts.push(geo.region);
+  if (geo.country) parts.push(geo.country);
+  loc = parts.join(', ');
+}
+onlineLocation.textContent = `Местоположение: ${loc}`;
         if (isMusicPlaying) {
           offlineMusic.pause();
           isMusicPlaying = false;
